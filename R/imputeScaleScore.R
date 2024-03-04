@@ -347,9 +347,7 @@
 
       tmp.grp.means <- names(tmp.meth)[grepl("IMV___", names(tmp.meth)) & tmp.meth != ""]
       if (length(tmp.grp.means) > 0) {
-        if (parexecute=="SEQ") {
-          # require(miceadds)
-        } else {
+        if (parexecute == "PAR") {
           if (!"miceadds" %in% parallel.config$packages)
             parallel.config$packages <- c(parallel.config$packages, "miceadds")
         }
@@ -359,7 +357,9 @@
           tmp.f <- strsplit(tmp.grp.means[f], "___")[[1]]
           tmp.pred[tmp.grp.means[f], tmp.f[2]] <- 2
           tmp.pred[tmp.grp.means[f], tmp.f[3]] <- -2
-          tmp.pred[tmp.grp.means[f], intersect(colnames(tmp.pred), c(demographics, paste0("SUMSCORE__", demographics)))] <- 0 # avoid "rank deficient" in latentgroupmean
+          tmp.pred[tmp.grp.means[f],     ##     avoid "rank deficient" in latentgroupmean
+                   intersect(colnames(tmp.pred),
+                             c(demographics, paste0("SUMSCORE__", demographics)))] <- 0
           impute.subset[, eval(tmp.f[3]) := as.integer(get(tmp.f[3]))]
         }
       }

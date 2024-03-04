@@ -8,7 +8,8 @@
     sgp_grades=NULL,
     aggregation_group="SCHOOL_NUMBER",
     years_for_aggregates=NULL,
-    rtm_adjustment=TRUE) {
+    rtm_adjustment=TRUE,
+    rtm_use_1year=FALSE) {
 
     ACHIEVEMENT_LEVEL <- ACHIEVEMENT_LEVEL_PRIOR_2YEAR <- CONTENT_AREA <- COVID_ACADEMIC_IMPACT_GES_MEDIAN_SGP <- NULL
     COVID_ACADEMIC_IMPACT_GES_MEDIAN_SGP_ADJ <- COVID_ACADEMIC_IMPACT_GES_MEDIAN_SSS <- COVID_ACADEMIC_IMPACT_GES_MEDIAN_SSS_ADJ <- NULL
@@ -141,6 +142,15 @@
     }
     group_aggregates <- group_aggregates[YEAR %in% years_for_aggregates]
 
+    if (rtm_use_1year) {
+      group_aggregates[YEAR == prior_year, MEDIAN_SGP_PRIOR_2YEAR := MEDIAN_SGP_PRIOR_1YEAR]
+      group_aggregates[YEAR == prior_year, MEAN_SCALE_SCORE_PRIOR_2YEAR_STANDARDIZED := MEAN_SCALE_SCORE_PRIOR_STANDARDIZED]
+      group_aggregates[YEAR == prior_year, MEAN_SCALE_SCORE_PRIOR_2YEAR_PERCENTILE := MEAN_SCALE_SCORE_PRIOR_PERCENTILE]
+      group_aggregates[YEAR == prior_year, PERCENT_PROFICIENT_PRIOR_2YEAR := PERCENT_PROFICIENT_PRIOR]
+
+      ges_lag <- -1L
+    } else ges_lag <- -2L
+
     ###   Create CENTERED prior 2 year prior variables
     group_aggregates[, PRIOR_MSSS_CENTERED_2YEAR := MEAN_SCALE_SCORE_PRIOR_2YEAR_STANDARDIZED - mean(MEAN_SCALE_SCORE_PRIOR_2YEAR_STANDARDIZED, na.rm=TRUE), by = list(YEAR, CONTENT_AREA)]
     group_aggregates[, PRIOR_MSSP_CENTERED_2YEAR := MEAN_SCALE_SCORE_PRIOR_2YEAR_PERCENTILE - mean(MEAN_SCALE_SCORE_PRIOR_2YEAR_PERCENTILE, na.rm=TRUE), by = list(YEAR, CONTENT_AREA)]
@@ -229,7 +239,7 @@
     ges_data <- copy(sgp_data)
     ges_data[YEAR < prior_year, SGP_BASELINE := SGP]
     ges_sgp_prior <- ges_data[GRADE %in% sgp_grades,
-            as.list(gammaEffectSizeLong(.SD, "SGP_BASELINE", SGP:::yearIncrement(prior_year, -2), prior_year, quantiles=c(0.5), digits=2)),
+            as.list(gammaEffectSizeLong(.SD, "SGP_BASELINE", SGP:::yearIncrement(prior_year, ges_lag), prior_year, quantiles=c(0.5), digits=2)),
           keyby=c("CONTENT_AREA", aggregation_group)][, YEAR := prior_year]
 
     ##    Now replace 2019 BASELINEs with COHORT (only for BASELINES that were present originally)
@@ -390,7 +400,7 @@
     ###   Create uncorrected G.E.S.
     ges_sss <- rbindlist(list(
         sgp_data[,
-            as.list(gammaEffectSizeLong(.SD, "SCALE_SCORE_STANDARDIZED", SGP:::yearIncrement(prior_year, -2), prior_year, quantiles=c(0.5), digits=2)),
+            as.list(gammaEffectSizeLong(.SD, "SCALE_SCORE_STANDARDIZED", SGP:::yearIncrement(prior_year, ges_lag), prior_year, quantiles=c(0.5), digits=2)),
           keyby=c("CONTENT_AREA", aggregation_group)][, YEAR := prior_year],
         sgp_data[,
             as.list(gammaEffectSizeLong(.SD, "SCALE_SCORE_STANDARDIZED", prior_year, current_year, quantiles=c(0.5), digits=2)),
@@ -437,7 +447,7 @@
     ###   Create uncorrected G.E.S.
     ges_ssp <- rbindlist(list(
         sgp_data[,
-            as.list(gammaEffectSizeLong(.SD, "SCALE_SCORE_PERCENTILE", SGP:::yearIncrement(prior_year, -2), prior_year, quantiles=c(0.5), digits=2)),
+            as.list(gammaEffectSizeLong(.SD, "SCALE_SCORE_PERCENTILE", SGP:::yearIncrement(prior_year, ges_lag), prior_year, quantiles=c(0.5), digits=2)),
           keyby=c("CONTENT_AREA", aggregation_group)][, YEAR := prior_year],
         sgp_data[,
             as.list(gammaEffectSizeLong(.SD, "SCALE_SCORE_PERCENTILE", prior_year, current_year, quantiles=c(0.5), digits=2)),

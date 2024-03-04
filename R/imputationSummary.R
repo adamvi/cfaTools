@@ -124,7 +124,7 @@
   ##    Gamma -- fraction of information about Q missing due to nonresponse
   smry_all[, SS_Gamma := round((SS_RIV+(2/(SS_ADF+3)))/(1+SS_RIV), 5)]
   smry_all[, SGP_Gamma := round((SGP_RIV+(2/(SGP_ADF+3)))/(1+SGP_RIV), 5)]
-  smry_all[, SGPB_Gamma := round((SGP_RIV+(2/(SGPB_ADF+3)))/(1+SGPB_RIV), 5)]
+  smry_all[, SGPB_Gamma := round((SGPB_RIV+(2/(SGPB_ADF+3)))/(1+SGPB_RIV), 5)]
 
   ###   Statistical Inference -- Section 2.4.2
   ##    Confidence intervals
@@ -173,7 +173,7 @@
   smry_all[, SGPB_F_Stat := ((Mean_SGPB_Observed - Mean_SGPB_Imputed)^2)/SGPB_T]
   smry_all[!is.na(SGPB_ADF) & SGPB_ADF != 0, SGPB_F_p := round(pf(SGPB_F_Stat, df1=1, df2=SGPB_ADF, lower.tail=FALSE), 5)]
   smry_all[, SGPB_F_Simp := ((Mean_SGPB_Observed - Mean_SGPB_Imputed)^2)/((1 + 1/M.IMP)*SGPB_B)]
-  smry_all[, SGPB_F_p_simp := round(pf(SGP_F_Simp, df1=1, df2=nu, lower.tail=FALSE), 5)]
+  smry_all[, SGPB_F_p_simp := round(pf(SGPB_F_Simp, df1=1, df2=nu, lower.tail=FALSE), 5)]
 
   #####
   ###   Overall Summary/Comparison of Imputed vs Observed
