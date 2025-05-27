@@ -11,14 +11,17 @@
   year_1,
   year_2,
   quantiles=1:9/10,
+  se = FALSE,
   digits=3) {
 
     YEAR <- NULL
     x <- na.omit(data_table[YEAR %in% year_1, get(variable)])
     y <- na.omit(data_table[YEAR %in% year_2, get(variable)])
-    gma <- round(gammaEffectSize(x, y, prob = quantiles), digits)
-    names(gma) <- paste0("Q_", quantiles*100)
-    gma
+    if (length(x) > 1 & length(y) > 1) {
+      gma <- round(gammaEffectSize(x, y, prob = quantiles), digits)
+      names(gma) <- paste0("Q_", quantiles*100)
+      gma
+    } else return(as.numeric(NA))
 }
 
 ###   Harell-Davis (trimmed) quantile estimator
@@ -62,9 +65,30 @@
         tmp.index <- seq(n)[-c(low.tail.index, up.tail.index)]
         # tmp.index <- which(x > hdi.x[[1]] & x < hdi.x[[2]])  ##  This doesn't work well with ties...
         hde <- sum(w[tmp.index] * x[tmp.index]) * 1/sum(w[tmp.index])
-      } else hde <- sum(w * x) # weighted sum
+
+        if (se) { # Maritz-Jarrett method for calculating standard errors
+          mjv <- sum(w[tmp.index] * x[tmp.index]^2) * 1/sum(w[tmp.index])
+          mjse <- sqrt(mjv - hde^2)
+          return(c(hde, mjse))
+        }
+        hde
+      } else { # Maritz-Jarrett method for calculating standard errors
+        hde <- sum(w * x) # weighted sum
+        if (se) {
+          mjv <- sum(w * x^2)
+          mjse <- sqrt(mjv - hde^2)
+          return(c(hde, mjse))
+        }
+        hde
+      }
     }
-    as.numeric(unlist(lapply(q, function(f) .hd(x, prob = f))))
+    if (se) {
+      res <- data.table("Quantile" = q, t(sapply(q, function(f) .hd(x, prob = f), simplify=TRUE)))
+      setnames(res, 2:3, c("HDQE", "SE"))
+      res
+    } else {
+      as.numeric(unlist(lapply(q, function(f) .hd(x, prob = f))))
+    }
 }
 
 ###   Utility Functions
